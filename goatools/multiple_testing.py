@@ -103,8 +103,9 @@ http://www.biomedcentral.com/1471-2105/6/168
 
 def calc_qval(study_count, study_n, pop_count, pop_n,
               pop, assoc, term_pop, obo_dag, T=500):
-    print(("Generate p-value distribution for FDR "
-           "based on resampling (this might take a while)"), file=sys.stderr)
+    # print(("Generate p-value distribution for FDR "
+    #        "based on resampling (this might take a while)"), file=sys.stderr)
+    #           Print statements are not so nice for notebooks.
     distribution = []
     for i in range(T):
         new_study = random.sample(pop, study_n)
@@ -121,9 +122,10 @@ def calc_qval(study_count, study_n, pop_count, pop_n,
                 smallest_p = p.two_tail
 
         distribution.append(smallest_p)
-        if i % 10  == 0:
-            print("Sample {0} / {1}: p-value {2}".\
-                        format(i, T, smallest_p), file=sys.stderr)
+        # if i % 10  == 0:
+        #     print("Sample {0} / {1}: p-value {2}".\
+        #                 format(i, T, smallest_p), file=sys.stderr)
+        # Not so nice to have so many print lines on a notebook
     return distribution
 
 

@@ -12,7 +12,7 @@ from __future__ import absolute_import
 import fisher
 from .multiple_testing import Bonferroni, Sidak, HolmBonferroni, FDR, calc_qval
 from .ratio import count_terms, is_ratio_different
-
+import pandas as pd
 
 class GOEnrichmentRecord(object):
     """Represents one result (from a single GOTerm) in the GOEnrichmentStudy
@@ -158,20 +158,48 @@ class GOEnrichmentStudy(object):
         for rec, val in zip(self.results, corrected_pvals):
             rec.__setattr__("p_"+method, val)
 
-    def print_summary(self, min_ratio=None, indent=False, pval=0.05):
+    def print_summary(self, min_ratio=None, indent=False, pval=0.05, toDF = False):
+        """
+        :param min_ratio:
+        :param indent:
+        :param pval: is set to 0.05 for Bonferroni correction and used as a cut-off for summary. Set to None to retrieve all results.
+        :param toDF:
+        :return:
+        """
+
         # Header contains parameters
-        print("# min_ratio={0} pval={1}".format(min_ratio, pval))
+        if toDF == False:
+            print("# min_ratio={0} pval={1}".format(min_ratio, pval))
 
-        # field names for output
-        print("\t".join(GOEnrichmentRecord()._fields))
+            # field names for output
+            print("\t".join(GOEnrichmentRecord()._fields))
 
-        for rec in self.results:
-            # calculate some additional statistics
-            # (over_under, is_ratio_different)
-            rec.update_remaining_fields(min_ratio=min_ratio)
+            for rec in self.results:
+                # calculate some additional statistics
+                # (over_under, is_ratio_different)
+                rec.update_remaining_fields(min_ratio=min_ratio)
 
-            if pval is not None and rec.p_bonferroni > pval:
-                continue
+                if pval is not None and rec.p_bonferroni > pval:
+                    continue
 
-            if rec.is_ratio_different:
-                print(rec.__str__(indent=indent))
+                if rec.is_ratio_different:
+                    print(rec.__str__(indent=indent))
+
+        if toDF == True:
+            resultsDF = pd.DataFrame(columns=GOEnrichmentRecord()._fields)
+            i = 0
+            for rec in self.results:
+                # calculate some additional statistics
+                # (over_under, is_ratio_different)
+                rec.update_remaining_fields(min_ratio=min_ratio)
+
+                if pval is not None and rec.p_bonferroni > pval:
+                    continue
+
+                i += 1
+                resultsDF.loc[i] = [getattr(rec, t) for t in rec._fields]
+
+            # pandas.to_excel can't seem to handle tuples, so convert them to string.
+            resultsDF['ratio_in_study'] = resultsDF['ratio_in_study'].astype(str)
+            resultsDF['ratio_in_pop'] = resultsDF['ratio_in_pop'].astype(str)
+            return resultsDF
